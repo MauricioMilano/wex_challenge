@@ -1,0 +1,47 @@
+version: "3.8"
+services:
+  postgres:
+    build: ./app/postgres
+    image: postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PGDATA: ${PGDATA}
+    volumes:
+      - ./pg:${PGDATA}
+      - ./01-init.sql:/docker-entrypoint-initdb.d/01-init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - app-network
+    restart: always
+  pgadmin:
+    image: dpage/pgadmin4
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "8080:80"
+    networks:
+      - app-network
+    depends_on:
+      - postgres
+  app:
+    build: ./app/go_app
+    ports:
+      - "3000:3000"
+    networks:
+      - app-network
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+volumes:
+    pg: 
+      external: true
+
+networks: 
+  app-network:
+    driver: bridge
